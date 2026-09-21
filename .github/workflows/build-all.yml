@@ -1,4 +1,4 @@
-name: Build MCLI binaries
+name: Build JAVLI binaries
 
 on:
   push:
@@ -16,12 +16,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: "Windows 64-bit", os: windows-latest, python: "3.13", architecture: x64, binary: "dist/mcli.exe", artifact: "mcli-windows-x64" }
-          - { name: "Windows 32-bit", os: windows-latest, python: "3.12", architecture: x86, binary: "dist/mcli.exe", artifact: "mcli-windows-x86" }
-          - { name: "Linux 64-bit", os: ubuntu-latest, python: "3.13", architecture: x64, binary: "dist/mcli", artifact: "mcli-linux-x64" }
-          - { name: "Linux 32-bit", os: ubuntu-latest, python: "3.13", architecture: x64, binary: "dist/mcli", artifact: "mcli-linux-x86", linux32: true }
-          - { name: "macOS Intel", os: macos-15-intel, python: "3.13", architecture: x64, binary: "dist/mcli", artifact: "mcli-macos-intel" }
-          - { name: "macOS Apple Silicon", os: macos-15, python: "3.13", architecture: arm64, binary: "dist/mcli", artifact: "mcli-macos-arm64" }
+          - { name: "Windows 64-bit", os: windows-latest, python: "3.13", architecture: x64, binary: "dist/javli.exe", artifact: "javli-windows-x64" }
+          - { name: "Windows 32-bit", os: windows-latest, python: "3.12", architecture: x86, binary: "dist/javli.exe", artifact: "javli-windows-x86" }
+          - { name: "Linux 64-bit", os: ubuntu-latest, python: "3.13", architecture: x64, binary: "dist/javli", artifact: "javli-linux-x64" }
+          - { name: "Linux 32-bit", os: ubuntu-latest, python: "3.13", architecture: x64, binary: "dist/javli", artifact: "javli-linux-x86", linux32: true }
+          - { name: "macOS Intel", os: macos-15-intel, python: "3.13", architecture: x64, binary: "dist/javli", artifact: "javli-macos-intel" }
+          - { name: "macOS Apple Silicon", os: macos-15, python: "3.13", architecture: arm64, binary: "dist/javli", artifact: "javli-macos-arm64" }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -61,7 +61,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force package | Out-Null
-          Copy-Item dist/mcli.exe package/mcli.exe
+          Copy-Item dist/javli.exe package/javli.exe
           Copy-Item README.md package/README.md
           Compress-Archive -Path package/* -DestinationPath "${{ matrix.artifact }}.zip" -Force
       - name: Package Unix
@@ -69,10 +69,10 @@ jobs:
         shell: bash
         run: |
           mkdir -p package
-          cp dist/mcli package/mcli
-          chmod +x package/mcli
+          cp dist/javli package/javli
+          chmod +x package/javli
           cp README.md package/README.md
-          tar -C package -czf "${{ matrix.artifact }}.tar.gz" mcli README.md
+          tar -C package -czf "${{ matrix.artifact }}.tar.gz" javli README.md
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
@@ -103,5 +103,5 @@ jobs:
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" release-assets/* --clobber --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$TAG" release-assets/* --target "$GITHUB_SHA" --title "MCLI $TAG" --generate-notes --repo "$GITHUB_REPOSITORY"
+            gh release create "$TAG" release-assets/* --target "$GITHUB_SHA" --title "JAVLI $TAG" --generate-notes --repo "$GITHUB_REPOSITORY"
           fi
