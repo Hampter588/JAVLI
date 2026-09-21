@@ -2,6 +2,8 @@ name: Build MCLI binaries
 
 on:
   push:
+    tags:
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -88,16 +90,18 @@ jobs:
         with:
           path: release-assets
           merge-multiple: true
-      - name: Create/update commit release
+      - name: Publish release assets
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          SHORT_SHA="${GITHUB_SHA::7}"
-          TAG="build-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
-          TITLE="MCLI build ${GITHUB_RUN_NUMBER} (${SHORT_SHA})"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG="manual-${GITHUB_RUN_NUMBER}"
+          fi
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" release-assets/* --clobber --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$TAG" release-assets/* --target "$GITHUB_SHA" --title "$TITLE" --notes "Automated MCLI binaries for commit `$GITHUB_SHA`." --repo "$GITHUB_REPOSITORY"
+            gh release create "$TAG" release-assets/* --target "$GITHUB_SHA" --title "MCLI $TAG" --generate-notes --repo "$GITHUB_REPOSITORY"
           fi
