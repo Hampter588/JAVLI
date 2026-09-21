@@ -3,14 +3,14 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mcli-minecraft"
+name = "javli-minecraft"
 version = "1.0.0"
 description = "Minecraft command-line launcher with Mojang and Omniarchive source support"
 requires-python = ">=3.10"
 dependencies = ["requests>=2.31"]
 
 [project.scripts]
-mcli = "mcli.cli:main"
+javli = "mcli.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["mcli*"]
