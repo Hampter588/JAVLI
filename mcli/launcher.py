@@ -120,7 +120,7 @@ def _download_assets(meta):
         print(f"Assets: {total}/{total} cached", flush=True)
         return idx["id"]
 
-    workers=min(32, max(4, (os.cpu_count() or 4) * 4))
+    workers=min(128, max(16, (os.cpu_count() or 4) * 16))
     print(f"Assets: {cached}/{total} cached — downloading {len(missing)} with {workers} workers", flush=True)
 
     def fetch_asset(item):
