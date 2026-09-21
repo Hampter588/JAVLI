@@ -8,11 +8,21 @@
     in {
       packages = forAllSystems (system:
         let pkgs = import nixpkgs { inherit system; };
-        in { default = pkgs.python3Packages.buildPythonApplication {
-          pname = "mcli"; version = "1.0.0"; format = "pyproject"; src = ./.;
-          nativeBuildInputs = with pkgs.python3Packages; [ setuptools wheel ];
-          propagatedBuildInputs = with pkgs.python3Packages; [ requests ];
-        }; });
-      apps = forAllSystems (system: { default = { type = "app"; program = "${self.packages.${system}.default}/bin/mcli"; }; });
+        in {
+          default = pkgs.python3Packages.buildPythonApplication {
+            pname = "mcli";
+            version = "1.0.0";
+            format = "pyproject";
+            src = ./.;
+            nativeBuildInputs = with pkgs.python3Packages; [ setuptools wheel ];
+            propagatedBuildInputs = with pkgs.python3Packages; [ requests ];
+          };
+        });
+      apps = forAllSystems (system: {
+        default = {
+          type = "app";
+          program = "${self.packages.${system}.default}/bin/mcli";
+        };
+      });
     };
 }

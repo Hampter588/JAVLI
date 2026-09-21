@@ -1,7 +1,7 @@
 import hashlib, requests
 from pathlib import Path
 
-UA = "mcli/1.0 (+Minecraft launcher)"
+UA = "mcli/0.1 (+Minecraft launcher)"
 
 def get_json(url, timeout=20):
     r = requests.get(url, timeout=timeout, headers={"User-Agent": UA})

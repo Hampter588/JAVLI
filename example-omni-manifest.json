@@ -1,0 +1,14 @@
+{
+  "versions": [
+    {
+      "id": "example-legacy-version",
+      "type": "classic",
+      "releaseTime": "2010-01-01T00:00:00Z",
+      "downloads": {
+        "client": {
+          "url": "https://example.invalid/client.jar"
+        }
+      }
+    }
+  ]
+}
