@@ -91,4 +91,20 @@ class OmniarchiveSource(Source):
         return list(unique.values())
 
     def details(self, version):
+        # Omniarchive provides the preserved client JAR. Betacraft's public
+        # launcher metadata supplies the compatibility recipe required by
+        # applet-era/obfuscated builds (LWJGL, natives, LegacyFix and mainClass).
+        meta_url=f"https://files.betacraft.uk/launcher/v2/assets/jsons/{version.id}.json"
+        try:
+            r=requests.get(meta_url,timeout=30,headers={"User-Agent":UA})
+            if r.ok:
+                meta=r.json()
+                meta.setdefault("downloads",{})["client"]={
+                    **meta.get("downloads",{}).get("client",{}),
+                    "url":version.url,
+                }
+                meta["_mcli_compat"]="betacraft"
+                return meta
+        except Exception:
+            pass
         return version.raw
