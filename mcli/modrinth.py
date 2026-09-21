@@ -115,3 +115,35 @@ def install_modpack(project, instance):
                     if c: out.write(c)
     shutil.rmtree(tmp,ignore_errors=True)
     return index
+
+
+def install_content(project, instance, project_type):
+    if project_type not in ("resourcepack","shader"):
+        raise ModrinthError(f"Unsupported content type: {project_type}")
+    obj=get_instance(instance)
+    mc=obj["version"]
+    v=choose_version(project,mc,None)
+    f=_primary(v)
+    folder="resourcepacks" if project_type=="resourcepack" else "shaderpacks"
+    # Instances use their minecraft/ directory as the actual game directory.
+    dest=Path(obj["path"])/"minecraft"/folder
+    return _download_file(f,dest)
+
+def list_content(instance, project_type):
+    obj=get_instance(instance)
+    folder="resourcepacks" if project_type=="resourcepack" else "shaderpacks"
+    dest=Path(obj["path"])/"minecraft"/folder
+    if not dest.exists():
+        return []
+    return sorted(p for p in dest.iterdir() if p.is_file())
+
+def remove_content(name, instance, project_type):
+    obj=get_instance(instance)
+    folder="resourcepacks" if project_type=="resourcepack" else "shaderpacks"
+    dest=Path(obj["path"])/"minecraft"/folder
+    if not dest.exists():
+        return []
+    hits=[p for p in dest.iterdir() if p.is_file() and name.lower() in p.name.lower()]
+    for p in hits:
+        p.unlink()
+    return hits
