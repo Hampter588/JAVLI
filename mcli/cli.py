@@ -254,6 +254,10 @@ def cmd_random(args):
         print(f"Minecraft started (PID {proc.pid})")
     _print_source_warnings(errors)
 
+def cmd_update(args):
+    from .updater import update
+    update()
+
 def build_parser():
 
 
@@ -264,6 +268,10 @@ def build_parser():
 
     p = argparse.ArgumentParser(prog="mcli", description="Minecraft Command-Line Launcher")
     sub = p.add_subparsers(dest="command", required=True)
+
+    pu = sub.add_parser("update", help="Update this standalone MCLI binary from GitHub Releases")
+    pu.set_defaults(func=cmd_update)
+
 
     pr = sub.add_parser("random")
     pr.add_argument("--source", choices=["auto","mojang","omniarchive"], default="auto")
