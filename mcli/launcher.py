@@ -125,7 +125,8 @@ def _download_assets(meta):
         h=obj["hash"]
         dest=objects/h[:2]/h
         if not dest.exists():
-            missing.append((h,dest))
+            url=obj.get("url") or f"https://resources.download.minecraft.net/{h[:2]}/{h}"
+            missing.append((h,dest,url))
 
     total=len(entries)
     cached=total-len(missing)
@@ -137,8 +138,8 @@ def _download_assets(meta):
     print(f"Assets: {cached}/{total} cached — downloading {len(missing)} with {workers} workers", flush=True)
 
     def fetch_asset(item):
-        h,dest=item
-        download(f"https://resources.download.minecraft.net/{h[:2]}/{h}", dest, h)
+        h,dest,url=item
+        download(url, dest, h)
         return h
 
     completed=cached
