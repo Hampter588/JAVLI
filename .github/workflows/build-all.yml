@@ -1,421 +1,126 @@
-name: Build MCLI releases
+name: Build MCLI binaries
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Package version"
-        required: true
-        default: "1.0.0"
 
 permissions:
   contents: read
 
 jobs:
-  standalone:
-    name: Standalone — ${{ matrix.name }}
+  build:
+    name: ${{ matrix.name }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { name: "Windows x64", runner: windows-latest, artifact: "mcli-windows-x64", binary: "dist/mcli.exe" }
-          - { name: "Windows ARM64", runner: windows-11-arm, artifact: "mcli-windows-arm64", binary: "dist/mcli.exe" }
-          - { name: "Linux x64", runner: ubuntu-latest, artifact: "mcli-linux-x64", binary: "dist/mcli" }
-          - { name: "Linux ARM64", runner: ubuntu-24.04-arm, artifact: "mcli-linux-arm64", binary: "dist/mcli" }
-          - { name: "macOS Intel", runner: macos-15-intel, artifact: "mcli-macos-x64", binary: "dist/mcli" }
-          - { name: "macOS Apple Silicon", runner: macos-15, artifact: "mcli-macos-arm64", binary: "dist/mcli" }
-    runs-on: ${{ matrix.runner }}
+          - name: Windows 64-bit
+            os: windows-latest
+            python: "3.13"
+            architecture: x64
+            binary: dist/mcli.exe
+            artifact: mcli-windows-x64
+
+          - name: Windows 32-bit
+            os: windows-latest
+            python: "3.12"
+            architecture: x86
+            binary: dist/mcli.exe
+            artifact: mcli-windows-x86
+
+          - name: Linux 64-bit
+            os: ubuntu-latest
+            python: "3.13"
+            architecture: x64
+            binary: dist/mcli
+            artifact: mcli-linux-x64
+
+          - name: Linux 32-bit
+            os: ubuntu-latest
+            python: "3.13"
+            architecture: x64
+            binary: dist/mcli
+            artifact: mcli-linux-x86
+            linux32: true
+
+          - name: macOS Intel
+            os: macos-15-intel
+            python: "3.13"
+            architecture: x64
+            binary: dist/mcli
+            artifact: mcli-macos-intel
+
+          - name: macOS Apple Silicon
+            os: macos-15
+            python: "3.13"
+            architecture: arm64
+            binary: dist/mcli
+            artifact: mcli-macos-arm64
+
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.13"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: python -m pip install . "pyinstaller>=6.16,<7"
-      - run: python scripts/build_binary.py
-      - name: Smoke test
-        shell: bash
-        run: '"${{ matrix.binary }}" --help'
-      - name: Package Unix
-        if: runner.os != 'Windows'
+
+      - name: Build Linux 32-bit in i386 container
+        if: matrix.linux32 == true
         shell: bash
         run: |
-          mkdir package
-          cp "${{ matrix.binary }}" package/mcli
-          chmod +x package/mcli
-          cp README.md package/
-          tar -C package -czf "${{ matrix.artifact }}.tar.gz" mcli README.md
+          docker run --rm --platform linux/386 -v "$PWD:/src" -w /src i386/debian:bookworm sh -lc '
+            apt-get update &&
+            apt-get install -y python3 python3-pip python3-venv build-essential &&
+            python3 -m venv .venv32 &&
+            .venv32/bin/pip install --upgrade pip &&
+            .venv32/bin/pip install . "pyinstaller>=6.16,<7" &&
+            .venv32/bin/python scripts/build_binary.py
+          '
+
+      - name: Set up Python
+        if: matrix.linux32 != true
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+          architecture: ${{ matrix.architecture }}
+          cache: pip
+
+      - name: Install build dependencies
+        if: matrix.linux32 != true
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install . "pyinstaller>=6.16,<7"
+
+      - name: Build binary
+        if: matrix.linux32 != true
+        run: python scripts/build_binary.py
+
+      - name: Smoke test
+        if: matrix.linux32 != true
+        shell: bash
+        run: '"${{ matrix.binary }}" --help'
+
       - name: Package Windows
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force package | Out-Null
-          Copy-Item "${{ matrix.binary }}" package/mcli.exe
-          Copy-Item README.md package/
-          Compress-Archive package/* "${{ matrix.artifact }}.zip"
-      - uses: actions/upload-artifact@v4
+          Copy-Item dist/mcli.exe package/mcli.exe
+          Copy-Item README.md package/README.md
+          Compress-Archive -Path package/* -DestinationPath "${{ matrix.artifact }}.zip" -Force
+
+      - name: Package Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          mkdir -p package
+          cp dist/mcli package/mcli
+          chmod +x package/mcli
+          cp README.md package/README.md
+          tar -C package -czf "${{ matrix.artifact }}.tar.gz" mcli README.md
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
           path: |
-            *.zip
-            *.tar.gz
+            ${{ matrix.artifact }}.zip
+            ${{ matrix.artifact }}.tar.gz
           if-no-files-found: error
-
-  debian:
-    name: Debian package — ${{ matrix.arch }}
-    strategy:
-      matrix:
-        include:
-          - { runner: ubuntu-latest, arch: amd64 }
-          - { runner: ubuntu-24.04-arm, arch: arm64 }
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with: { python-version: "3.13" }
-      - run: python -m pip install . pyinstaller
-      - run: python scripts/build_binary.py
-      - shell: bash
-        run: |
-          mkdir -p pkg/DEBIAN pkg/usr/bin
-          cp dist/mcli pkg/usr/bin/mcli
-          sed -e "s/VERSION/${{ inputs.version }}/" -e "s/ARCH/${{ matrix.arch }}/" packaging/debian/control > pkg/DEBIAN/control
-          dpkg-deb --build --root-owner-group pkg "mcli_${{ inputs.version }}_${{ matrix.arch }}.deb"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mcli-debian-${{ matrix.arch }}
-          path: "*.deb"
-
-  rpm:
-    name: Fedora/RHEL RPM — ${{ matrix.arch }}
-    strategy:
-      matrix:
-        include:
-          - { runner: ubuntu-latest, arch: x86_64 }
-          - { runner: ubuntu-24.04-arm, arch: aarch64 }
-    runs-on: ${{ matrix.runner }}
-    container: fedora:latest
-    steps:
-      - run: dnf install -y git python3 python3-pip rpm-build
-      - uses: actions/checkout@v6
-      - run: python3 -m pip install --break-system-packages . pyinstaller
-      - run: python3 scripts/build_binary.py
-      - shell: bash
-        run: |
-          mkdir -p ~/rpmbuild/{SOURCES,SPECS,BUILD,RPMS,SRPMS}
-          cp dist/mcli ~/rpmbuild/SOURCES/mcli
-          sed -e "s/VERSION/${{ inputs.version }}/" -e "s/ARCH/${{ matrix.arch }}/" packaging/rpm/mcli.spec > ~/rpmbuild/SPECS/mcli.spec
-          rpmbuild -bb ~/rpmbuild/SPECS/mcli.spec
-          cp ~/rpmbuild/RPMS/${{ matrix.arch }}/*.rpm .
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mcli-rpm-${{ matrix.arch }}
-          path: "*.rpm"
-
-  distro-containers:
-    name: Distro build — ${{ matrix.name }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { name: "Debian 13 x64", image: "debian:13", artifact: "mcli-debian13-x64" }
-          - { name: "Ubuntu 24.04 x64", image: "ubuntu:24.04", artifact: "mcli-ubuntu2404-x64" }
-          - { name: "Fedora x64", image: "fedora:latest", artifact: "mcli-fedora-x64" }
-          - { name: "Rocky Linux 9 x64", image: "rockylinux:9", artifact: "mcli-rocky9-x64" }
-          - { name: "openSUSE Tumbleweed x64", image: "opensuse/tumbleweed:latest", artifact: "mcli-opensuse-x64" }
-    runs-on: ubuntu-latest
-    container: ${{ matrix.image }}
-    steps:
-      - name: Install bootstrap dependencies
-        shell: sh
-        run: |
-          if command -v apt-get >/dev/null; then apt-get update && apt-get install -y git python3 python3-pip python3-venv; fi
-          if command -v dnf >/dev/null; then dnf install -y git python3 python3-pip; fi
-          if command -v zypper >/dev/null; then zypper --non-interactive install git python313 python313-pip || zypper --non-interactive install git python3 python3-pip; fi
-      - uses: actions/checkout@v6
-      - name: Build
-        shell: sh
-        run: |
-          python3 -m venv .venv || true
-          if [ -x .venv/bin/python ]; then PY=.venv/bin/python; else PY=python3; fi
-          $PY -m pip install --upgrade pip
-          $PY -m pip install . "pyinstaller>=6.16,<7"
-          $PY scripts/build_binary.py
-          chmod +x dist/mcli
-          tar -czf "${{ matrix.artifact }}.tar.gz" -C dist mcli
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact }}
-          path: "*.tar.gz"
-
-  alpine:
-    name: Alpine Linux x64
-    runs-on: ubuntu-latest
-    container: alpine:latest
-    steps:
-      - run: apk add --no-cache git python3 py3-pip py3-virtualenv build-base musl-dev zlib-dev
-      - uses: actions/checkout@v6
-      - shell: sh
-        run: |
-          python3 -m venv .venv
-          .venv/bin/pip install --upgrade pip
-          .venv/bin/pip install . "pyinstaller>=6.16,<7"
-          .venv/bin/python scripts/build_binary.py
-          chmod +x dist/mcli
-          tar -czf mcli-alpine-x64.tar.gz -C dist mcli
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mcli-alpine-x64
-          path: mcli-alpine-x64.tar.gz
-
-  arch:
-    name: Arch Linux — ${{ matrix.arch }}
-    strategy:
-      matrix:
-        include:
-          - { runner: ubuntu-latest, arch: x86_64 }
-          - { runner: ubuntu-24.04-arm, arch: aarch64 }
-    runs-on: ${{ matrix.runner }}
-    container: archlinux:latest
-    steps:
-      - run: pacman -Syu --noconfirm git python python-pip
-      - uses: actions/checkout@v6
-      - shell: bash
-        run: |
-          python -m venv .venv
-          .venv/bin/pip install . pyinstaller
-          .venv/bin/python scripts/build_binary.py
-          tar -czf "mcli-arch-${{ matrix.arch }}.tar.gz" -C dist mcli
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mcli-arch-${{ matrix.arch }}
-          path: "mcli-arch-*.tar.gz"
-
-  nix:
-    name: Nix — ${{ matrix.system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { runner: ubuntu-latest, system: x86_64-linux }
-          - { runner: ubuntu-24.04-arm, system: aarch64-linux }
-          - { runner: macos-15-intel, system: x86_64-darwin }
-          - { runner: macos-15, system: aarch64-darwin }
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - uses: actions/checkout@v6
-      - uses: cachix/install-nix-action@v31
-      - run: nix build .#packages.${{ matrix.system }}.default
-      - run: nix flake check
-      - name: Package Nix result
-        shell: bash
-        run: |
-          mkdir nix-out
-          cp -L result/bin/mcli nix-out/mcli
-          tar -czf "mcli-nix-${{ matrix.system }}.tar.gz" -C nix-out mcli
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mcli-nix-${{ matrix.system }}
-          path: "mcli-nix-*.tar.gz"
-
-
-  freebsd:
-    name: FreeBSD x64
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Build inside FreeBSD VM
-        uses: vmactions/freebsd-vm@v1
-        with:
-          usesh: true
-          prepare: |
-            pkg install -y python311 py311-pip git
-          run: |
-            python3.11 -m venv .venv
-            .venv/bin/pip install --upgrade pip
-            .venv/bin/pip install . "pyinstaller>=6.16,<7"
-            .venv/bin/python scripts/build_binary.py
-            chmod +x dist/mcli
-            tar -czf mcli-freebsd-x64.tar.gz -C dist mcli
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mcli-freebsd-x64
-          path: mcli-freebsd-x64.tar.gz
-
-  openbsd:
-    name: OpenBSD x64
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Build inside OpenBSD VM
-        uses: vmactions/openbsd-vm@v1
-        with:
-          usesh: true
-          prepare: |
-            pkg_add python%3.11 py3-pip git
-          run: |
-            python3.11 -m venv .venv
-            .venv/bin/pip install --upgrade pip
-            .venv/bin/pip install . "pyinstaller>=6.16,<7"
-            .venv/bin/python scripts/build_binary.py
-            chmod +x dist/mcli
-            tar -czf mcli-openbsd-x64.tar.gz -C dist mcli
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mcli-openbsd-x64
-          path: mcli-openbsd-x64.tar.gz
-
-  netbsd:
-    name: NetBSD x64
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Build inside NetBSD VM
-        uses: vmactions/netbsd-vm@v1
-        with:
-          usesh: true
-          prepare: |
-            /usr/sbin/pkg_add python311 py311-pip git || true
-          run: |
-            python3.11 -m venv .venv
-            .venv/bin/pip install --upgrade pip
-            .venv/bin/pip install . "pyinstaller>=6.16,<7"
-            .venv/bin/python scripts/build_binary.py
-            chmod +x dist/mcli
-            tar -czf mcli-netbsd-x64.tar.gz -C dist mcli
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mcli-netbsd-x64
-          path: mcli-netbsd-x64.tar.gz
-
-
-  linux-exotic:
-    name: Experimental Linux — ${{ matrix.arch }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { arch: "riscv64", platform: "linux/riscv64", image: "debian:unstable", artifact: "mcli-linux-riscv64" }
-          - { arch: "ppc64le", platform: "linux/ppc64le", image: "debian:unstable", artifact: "mcli-linux-ppc64le" }
-          - { arch: "s390x", platform: "linux/s390x", image: "debian:unstable", artifact: "mcli-linux-s390x" }
-          - { arch: "armv7", platform: "linux/arm/v7", image: "debian:bookworm", artifact: "mcli-linux-armv7" }
-          - { arch: "x86", platform: "linux/386", image: "debian:bookworm", artifact: "mcli-linux-x86" }
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: docker/setup-qemu-action@v3
-        with:
-          platforms: all
-      - name: Build under target architecture
-        shell: bash
-        run: |
-          docker run --rm --platform "${{ matrix.platform }}" \
-            -v "$PWD:/src" -w /src "${{ matrix.image }}" sh -lc '
-              apt-get update &&
-              apt-get install -y python3 python3-pip python3-venv build-essential &&
-              python3 -m venv .venv-exotic &&
-              .venv-exotic/bin/pip install --upgrade pip &&
-              .venv-exotic/bin/pip install . "pyinstaller>=6.16,<7" &&
-              .venv-exotic/bin/python scripts/build_binary.py &&
-              chmod +x dist/mcli
-            '
-          tar -czf "${{ matrix.artifact }}.tar.gz" -C dist mcli
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact }}
-          path: "${{ matrix.artifact }}.tar.gz"
-
-  windows-x86:
-    name: Windows x86 (32-bit)
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          architecture: "x86"
-      - run: python -m pip install . "pyinstaller>=6.16,<7"
-      - run: python scripts/build_binary.py
-      - shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force package | Out-Null
-          Copy-Item dist/mcli.exe package/mcli.exe
-          Copy-Item README.md package/
-          Compress-Archive package/* mcli-windows-x86.zip
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mcli-windows-x86
-          path: mcli-windows-x86.zip
-
-  freebsd-arm64:
-    name: FreeBSD ARM64
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Build inside FreeBSD ARM64 VM
-        uses: vmactions/freebsd-vm@v1
-        with:
-          arch: aarch64
-          usesh: true
-          prepare: |
-            pkg install -y python311 py311-pip git
-          run: |
-            python3.11 -m venv .venv
-            .venv/bin/pip install --upgrade pip
-            .venv/bin/pip install . "pyinstaller>=6.16,<7"
-            .venv/bin/python scripts/build_binary.py
-            chmod +x dist/mcli
-            tar -czf mcli-freebsd-arm64.tar.gz -C dist mcli
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mcli-freebsd-arm64
-          path: mcli-freebsd-arm64.tar.gz
-
-  openbsd-arm64:
-    name: OpenBSD ARM64
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Build inside OpenBSD ARM64 VM
-        uses: vmactions/openbsd-vm@v1
-        with:
-          arch: aarch64
-          usesh: true
-          prepare: |
-            pkg_add python%3.11 py3-pip git
-          run: |
-            python3.11 -m venv .venv
-            .venv/bin/pip install --upgrade pip
-            .venv/bin/pip install . "pyinstaller>=6.16,<7"
-            .venv/bin/python scripts/build_binary.py
-            chmod +x dist/mcli
-            tar -czf mcli-openbsd-arm64.tar.gz -C dist mcli
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mcli-openbsd-arm64
-          path: mcli-openbsd-arm64.tar.gz
-
-  netbsd-arm64:
-    name: NetBSD ARM64
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Build inside NetBSD ARM64 VM
-        uses: vmactions/netbsd-vm@v1
-        with:
-          arch: aarch64
-          usesh: true
-          prepare: |
-            /usr/sbin/pkg_add python311 py311-pip git || true
-          run: |
-            python3.11 -m venv .venv
-            .venv/bin/pip install --upgrade pip
-            .venv/bin/pip install . "pyinstaller>=6.16,<7"
-            .venv/bin/python scripts/build_binary.py
-            chmod +x dist/mcli
-            tar -czf mcli-netbsd-arm64.tar.gz -C dist mcli
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mcli-netbsd-arm64
-          path: mcli-netbsd-arm64.tar.gz
