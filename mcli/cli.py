@@ -125,7 +125,7 @@ def cmd_account(args):
         print("Removed:",a.get("profile",{}).get("name",args.alias))
     elif action=="logout":
         logout()
-        print("Active Microsoft account removed from MCLI.")
+        print("Active Microsoft account removed from JAVLI.")
 
 def cmd_java(args):
     from .java_manager import installed, install, detect_system, java_major, java_exe, RUNTIMES
@@ -243,7 +243,7 @@ def cmd_server(args):
         print(f'Created {obj["kind"]} server {obj["name"]} ({obj["version"]})')
         print(obj["path"])
         print("EULA is NOT accepted automatically. After reading it, run:")
-        print(f"  mcli server eula {obj['name']}")
+        print(f"  javli server eula {obj['name']}")
     elif a=="list":
         for x in list_servers():
             try: _,running=status(x["name"])
@@ -285,10 +285,10 @@ def build_parser():
 
 
 
-    p = argparse.ArgumentParser(prog="mcli", description="Minecraft Command-Line Launcher")
+    p = argparse.ArgumentParser(prog="javli", description="Minecraft Command-Line Launcher")
     sub = p.add_subparsers(dest="command", required=True)
 
-    pu = sub.add_parser("update", help="Update this standalone MCLI binary from GitHub Releases")
+    pu = sub.add_parser("update", help="Update this standalone JAVLI binary from GitHub Releases")
     pu.set_defaults(func=cmd_update)
 
 
