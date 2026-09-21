@@ -75,7 +75,7 @@ class OmniarchiveSource(Source):
         errors=[]
         for era,path in ERA_PATHS.items():
             try:
-                vals.extend(self._crawl_era(era,urljoin(ROOT,path)))
+                vals.extend(self._crawl_era(era,urljoin(ROOT,path+"index.html")))
             except Exception as e:
                 errors.append((era,e))
 
