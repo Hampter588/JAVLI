@@ -1,0 +1,97 @@
+import json, os, platform, shutil, stat, sys, tarfile, tempfile, zipfile
+from pathlib import Path
+import requests
+
+REPO="Hampter588/MCLI"
+API=f"https://api.github.com/repos/{REPO}/releases/latest"
+UA="MCLI/1.0 (https://github.com/Hampter588/MCLI)"
+
+class UpdateError(RuntimeError):
+    pass
+
+def _target():
+    system=platform.system()
+    machine=platform.machine().lower()
+    bits=64 if sys.maxsize > 2**32 else 32
+
+    if system=="Windows":
+        return "mcli-windows-x64.zip" if bits==64 else "mcli-windows-x86.zip", "mcli.exe"
+    if system=="Linux":
+        return "mcli-linux-x64.tar.gz" if bits==64 else "mcli-linux-x86.tar.gz", "mcli"
+    if system=="Darwin":
+        if machine in ("arm64","aarch64"):
+            return "mcli-macos-arm64.tar.gz", "mcli"
+        return "mcli-macos-intel.tar.gz", "mcli"
+    raise UpdateError(f"Automatic update is not supported on {system} {machine}.")
+
+def _latest_release():
+    r=requests.get(API,headers={"User-Agent":UA,"Accept":"application/vnd.github+json"},timeout=30)
+    r.raise_for_status()
+    return r.json()
+
+def _extract(archive, dest):
+    name=archive.name.lower()
+    if name.endswith(".zip"):
+        with zipfile.ZipFile(archive) as z: z.extractall(dest)
+    elif name.endswith(".tar.gz"):
+        with tarfile.open(archive,"r:gz") as t: t.extractall(dest)
+    else:
+        raise UpdateError("Unknown MCLI release archive format.")
+
+def update():
+    if getattr(sys,"frozen",False):
+        current=Path(sys.executable).resolve()
+    else:
+        raise UpdateError("mcli update is for standalone release binaries. Source installs should update with git/pip.")
+
+    asset_name,binary_name=_target()
+    release=_latest_release()
+    assets={a["name"]:a for a in release.get("assets",[])}
+    asset=assets.get(asset_name)
+    if not asset:
+        available=", ".join(sorted(assets)) or "none"
+        raise UpdateError(f"Release {release.get('tag_name','?')} has no {asset_name}. Available: {available}")
+
+    print(f"Latest release: {release.get('name') or release.get('tag_name')}")
+    print(f"Downloading {asset_name}...")
+
+    with tempfile.TemporaryDirectory(prefix="mcli-update-") as td:
+        td=Path(td)
+        archive=td/asset_name
+        with requests.get(asset["browser_download_url"],headers={"User-Agent":UA},stream=True,timeout=120) as r:
+            r.raise_for_status()
+            with archive.open("wb") as f:
+                for chunk in r.iter_content(1024*1024):
+                    if chunk: f.write(chunk)
+        unpack=td/"unpack"; unpack.mkdir()
+        _extract(archive,unpack)
+        candidates=list(unpack.rglob(binary_name))
+        if not candidates:
+            raise UpdateError(f"{binary_name} was not found inside {asset_name}.")
+        new=candidates[0]
+
+        if os.name=="nt":
+            # Windows cannot overwrite the running executable. A detached batch
+            # waits for this process to exit, swaps the file, then removes itself.
+            replacement=current.with_name(current.name+".new")
+            shutil.copy2(new,replacement)
+            bat=td/"mcli-update.cmd"
+            bat.write_text(
+                "@echo off\r\n"
+                "timeout /t 2 /nobreak >nul\r\n"
+                f'move /Y "{replacement}" "{current}" >nul\r\n'
+                f'echo MCLI updated to {release.get("tag_name","latest")}\r\n'
+                'del "%~f0"\r\n',
+                encoding="utf-8",
+            )
+            import subprocess
+            subprocess.Popen(["cmd","/c",str(bat)],creationflags=subprocess.CREATE_NEW_PROCESS_GROUP|subprocess.DETACHED_PROCESS)
+            print("Update downloaded. MCLI will replace itself after this command exits.")
+        else:
+            mode=current.stat().st_mode
+            staged=current.with_name(current.name+".new")
+            shutil.copy2(new,staged)
+            staged.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+            os.replace(staged,current)
+            print(f"MCLI updated to {release.get('tag_name','latest')}.")
+
