@@ -2,9 +2,9 @@ import json, os, platform, shutil, stat, sys, tarfile, tempfile, zipfile
 from pathlib import Path
 import requests
 
-REPO="Hampter588/MCLI"
+REPO="Hampter588/JAVLI"
 API=f"https://api.github.com/repos/{REPO}/releases/latest"
-UA="MCLI/1.0 (https://github.com/Hampter588/MCLI)"
+UA="JAVLI/1.0 (https://github.com/Hampter588/JAVLI)"
 
 class UpdateError(RuntimeError):
     pass
@@ -15,13 +15,13 @@ def _target():
     bits=64 if sys.maxsize > 2**32 else 32
 
     if system=="Windows":
-        return "mcli-windows-x64.zip" if bits==64 else "mcli-windows-x86.zip", "mcli.exe"
+        return "javli-windows-x64.zip" if bits==64 else "javli-windows-x86.zip", "javli.exe"
     if system=="Linux":
-        return "mcli-linux-x64.tar.gz" if bits==64 else "mcli-linux-x86.tar.gz", "mcli"
+        return "javli-linux-x64.tar.gz" if bits==64 else "javli-linux-x86.tar.gz", "javli"
     if system=="Darwin":
         if machine in ("arm64","aarch64"):
-            return "mcli-macos-arm64.tar.gz", "mcli"
-        return "mcli-macos-intel.tar.gz", "mcli"
+            return "javli-macos-arm64.tar.gz", "javli"
+        return "javli-macos-intel.tar.gz", "javli"
     raise UpdateError(f"Automatic update is not supported on {system} {machine}.")
 
 def _latest_release():
@@ -36,7 +36,7 @@ def _extract(archive, dest):
     elif name.endswith(".tar.gz"):
         with tarfile.open(archive,"r:gz") as t: t.extractall(dest)
     else:
-        raise UpdateError("Unknown MCLI release archive format.")
+        raise UpdateError("Unknown JAVLI release archive format.")
 
 def update():
     if getattr(sys,"frozen",False):
@@ -55,7 +55,7 @@ def update():
     print(f"Latest release: {release.get('name') or release.get('tag_name')}")
     print(f"Downloading {asset_name}...")
 
-    with tempfile.TemporaryDirectory(prefix="mcli-update-") as td:
+    with tempfile.TemporaryDirectory(prefix="javli-update-") as td:
         td=Path(td)
         archive=td/asset_name
         with requests.get(asset["browser_download_url"],headers={"User-Agent":UA},stream=True,timeout=120) as r:
@@ -75,23 +75,23 @@ def update():
             # waits for this process to exit, swaps the file, then removes itself.
             replacement=current.with_name(current.name+".new")
             shutil.copy2(new,replacement)
-            bat=td/"mcli-update.cmd"
+            bat=td/"javli-update.cmd"
             bat.write_text(
                 "@echo off\r\n"
                 "timeout /t 2 /nobreak >nul\r\n"
                 f'move /Y "{replacement}" "{current}" >nul\r\n'
-                f'echo MCLI updated to {release.get("tag_name","latest")}\r\n'
+                f'echo JAVLI updated to {release.get("tag_name","latest")}\r\n'
                 'del "%~f0"\r\n',
                 encoding="utf-8",
             )
             import subprocess
             subprocess.Popen(["cmd","/c",str(bat)],creationflags=subprocess.CREATE_NEW_PROCESS_GROUP|subprocess.DETACHED_PROCESS)
-            print("Update downloaded. MCLI will replace itself after this command exits.")
+            print("Update downloaded. JAVLI will replace itself after this command exits.")
         else:
             mode=current.stat().st_mode
             staged=current.with_name(current.name+".new")
             shutil.copy2(new,staged)
             staged.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
             os.replace(staged,current)
-            print(f"MCLI updated to {release.get('tag_name','latest')}.")
+            print(f"JAVLI updated to {release.get('tag_name','latest')}.")
 
