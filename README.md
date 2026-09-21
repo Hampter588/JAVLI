@@ -1,5 +1,5 @@
 # mcli
-
+# ALERT MCLI HAS ONLY BEEN  TESTED ON WINDOWS 64 IT MAY NOT WORK AS EXPECTED PLEASE REPORT IISSUES
 **The Minecraft Command-Line Launcher**
 
 MCLI brings modern Minecraft, historical builds, Microsoft accounts, Java runtimes, instances, modloaders, mods and servers under one command-line interface.
