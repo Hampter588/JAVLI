@@ -1,12 +1,12 @@
 # Microsoft accounts
 
 ```bash
-mcli login
-mcli login --alias main
-mcli account list
-mcli account use main
-mcli account show
-mcli account refresh
+javli login
+javli login --alias main
+javli account list
+javli account use main
+javli account show
+javli account refresh
 ```
 
-Treat the authentication files under `~/.mcli/` as sensitive.
+Treat the authentication files under `~/.javli/` as sensitive.
