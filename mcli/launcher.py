@@ -235,7 +235,15 @@ def launch(version, client_jar, meta, game_dir_override=None):
     }
     jvm_args,game_args=_modern_args(meta,vars)
     if not any(x.startswith("-Xmx") for x in jvm_args):
-        jvm_args.insert(0,"-Xmx2G")
+        era={"old_beta":"beta","old_alpha":"alpha"}.get(version.type, version.type)
+        if era in ("preclassic","classic","indev","infdev"):
+            heap="256M"
+        elif era in ("alpha","beta"):
+            heap="512M"
+        else:
+            heap="2G"
+        jvm_args.insert(0, f"-Xmx{heap}")
+        print(f"      Memory: {heap} ({era})", flush=True)
     if not any("java.library.path" in x for x in jvm_args):
         jvm_args.append("-Djava.library.path="+str(natives))
     if "-cp" not in jvm_args and "-classpath" not in jvm_args:
