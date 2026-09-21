@@ -12,9 +12,19 @@ for p in (dist, build):
 if spec.exists():
     spec.unlink()
 
-entry = root / "mcli" / "__main__.py"
+# Freeze the package entry point as a module-aware bootstrap.
+# Running mcli/__main__.py directly breaks relative imports because PyInstaller
+# executes it as top-level __main__ with no package parent.
+bootstrap = root / "mcli_pyinstaller_entry.py"
+bootstrap.write_text(
+    "from mcli.cli import main\n"
+    "if __name__ == '__main__':\n"
+    "    main()\n",
+    encoding="utf-8",
+)
+
 args = [
-    str(entry),
+    str(bootstrap),
     "--name=mcli",
     "--onefile",
     "--clean",
@@ -24,7 +34,10 @@ args = [
     f"--specpath={root}",
     "--collect-submodules=mcli",
 ]
-run(args)
+try:
+    run(args)
+finally:
+    bootstrap.unlink(missing_ok=True)
 
 exe = dist / ("mcli.exe" if os.name == "nt" else "mcli")
 if not exe.exists():
