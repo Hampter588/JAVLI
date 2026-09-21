@@ -1,0 +1,8 @@
+Package: mcli
+Version: VERSION
+Section: games
+Priority: optional
+Architecture: ARCH
+Maintainer: MCLI Project
+Description: Minecraft Command-Line Launcher
+ Launch modern and historical Minecraft from the terminal.
