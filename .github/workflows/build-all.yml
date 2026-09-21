@@ -1,0 +1,119 @@
+name: Build MCLI releases
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Package version
+        required: true
+        default: 1.0.0
+permissions:
+  contents: read
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: Windows x64, os: windows-latest, artifact: mcli-windows-x64, bin: dist/mcli.exe}
+          - {name: Windows ARM64, os: windows-11-arm, artifact: mcli-windows-arm64, bin: dist/mcli.exe}
+          - {name: Linux x64, os: ubuntu-latest, artifact: mcli-linux-x64, bin: dist/mcli}
+          - {name: Linux ARM64, os: ubuntu-24.04-arm, artifact: mcli-linux-arm64, bin: dist/mcli}
+          - {name: macOS Intel, os: macos-15-intel, artifact: mcli-macos-x64, bin: dist/mcli}
+          - {name: macOS ARM64, os: macos-15, artifact: mcli-macos-arm64, bin: dist/mcli}
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.13"}
+      - run: python -m pip install . "pyinstaller>=6.16,<7"
+      - run: python scripts/build_binary.py
+      - run: '"${{ matrix.bin }}" --help'
+        shell: bash
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.bin }}
+
+  windows-x86:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12", architecture: x86}
+      - run: python -m pip install . pyinstaller
+      - run: python scripts/build_binary.py
+      - uses: actions/upload-artifact@v4
+        with: {name: mcli-windows-x86, path: dist/mcli.exe}
+
+  linux-exotic:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {arch: riscv64, platform: linux/riscv64, image: debian:unstable}
+          - {arch: ppc64le, platform: linux/ppc64le, image: debian:unstable}
+          - {arch: s390x, platform: linux/s390x, image: debian:unstable}
+          - {arch: armv7, platform: linux/arm/v7, image: debian:bookworm}
+          - {arch: x86, platform: linux/386, image: debian:bookworm}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-qemu-action@v3
+        with: {platforms: all}
+      - run: |
+          docker run --rm --platform "${{ matrix.platform }}" -v "$PWD:/src" -w /src "${{ matrix.image }}" sh -lc '
+          apt-get update && apt-get install -y python3 python3-pip python3-venv build-essential &&
+          python3 -m venv .venv && .venv/bin/pip install . pyinstaller &&
+          .venv/bin/python scripts/build_binary.py'
+          tar -czf "mcli-linux-${{ matrix.arch }}.tar.gz" -C dist mcli
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mcli-linux-${{ matrix.arch }}
+          path: mcli-linux-${{ matrix.arch }}.tar.gz
+
+  alpine:
+    runs-on: ubuntu-latest
+    container: alpine:latest
+    steps:
+      - run: apk add --no-cache git python3 py3-pip py3-virtualenv build-base musl-dev
+      - uses: actions/checkout@v6
+      - run: python3 -m venv .venv && .venv/bin/pip install . pyinstaller && .venv/bin/python scripts/build_binary.py
+      - uses: actions/upload-artifact@v4
+        with: {name: mcli-alpine-x64, path: dist/mcli}
+
+  freebsd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          prepare: pkg install -y python311 py311-pip
+          run: python3.11 -m venv .venv && .venv/bin/pip install . pyinstaller && .venv/bin/python scripts/build_binary.py
+      - uses: actions/upload-artifact@v4
+        with: {name: mcli-freebsd-x64, path: dist/mcli}
+
+  openbsd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: vmactions/openbsd-vm@v1
+        with:
+          usesh: true
+          prepare: pkg_add python%3.11 py3-pip
+          run: python3.11 -m venv .venv && .venv/bin/pip install . pyinstaller && .venv/bin/python scripts/build_binary.py
+      - uses: actions/upload-artifact@v4
+        with: {name: mcli-openbsd-x64, path: dist/mcli}
+
+  netbsd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: vmactions/netbsd-vm@v1
+        with:
+          usesh: true
+          prepare: /usr/sbin/pkg_add python311 py311-pip || true
+          run: python3.11 -m venv .venv && .venv/bin/pip install . pyinstaller && .venv/bin/python scripts/build_binary.py
+      - uses: actions/upload-artifact@v4
+        with: {name: mcli-netbsd-x64, path: dist/mcli}
