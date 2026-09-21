@@ -1,4 +1,5 @@
 import json, os, platform, re, shutil, subprocess, zipfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from .cache import ROOT, VERSIONS, ensure
 from .net import download
@@ -94,18 +95,53 @@ def _download_assets(meta):
     idx=meta.get("assetIndex")
     if not idx:
         return meta.get("assets", "legacy")
+
     indexes=ASSETS/"indexes"
     objects=ASSETS/"objects"
     indexes.mkdir(parents=True, exist_ok=True)
+
     idx_path=indexes/f'{idx["id"]}.json'
     if not idx_path.exists():
         download(idx["url"], idx_path, idx.get("sha1"))
+
     data=json.loads(idx_path.read_text(encoding="utf-8"))
-    for obj in data.get("objects", {}).values():
+    entries=list(data.get("objects", {}).values())
+    missing=[]
+
+    for obj in entries:
         h=obj["hash"]
         dest=objects/h[:2]/h
         if not dest.exists():
-            download(f"https://resources.download.minecraft.net/{h[:2]}/{h}", dest, h)
+            missing.append((h,dest))
+
+    total=len(entries)
+    cached=total-len(missing)
+    if not missing:
+        print(f"Assets: {total}/{total} cached", flush=True)
+        return idx["id"]
+
+    workers=min(32, max(4, (os.cpu_count() or 4) * 4))
+    print(f"Assets: {cached}/{total} cached — downloading {len(missing)} with {workers} workers", flush=True)
+
+    def fetch_asset(item):
+        h,dest=item
+        download(f"https://resources.download.minecraft.net/{h[:2]}/{h}", dest, h)
+        return h
+
+    completed=cached
+    last_percent=-1
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures=[pool.submit(fetch_asset,item) for item in missing]
+        for fut in as_completed(futures):
+            fut.result()
+            completed += 1
+            percent=int(completed*100/total) if total else 100
+            if percent != last_percent:
+                print(f"Assets: {completed}/{total} ({percent}%)", end="\r", flush=True)
+                last_percent=percent
+
+    print(f"Assets: {total}/{total} (100%)" + " " * 20, flush=True)
     return idx["id"]
 
 def _java():
@@ -160,12 +196,17 @@ def launch(version, client_jar, meta, game_dir_override=None):
     if not account:
         raise AuthError("No Microsoft account saved. Run: mcli login")
     # Refresh on every launch so Minecraft gets a current access token.
+    print("[1/5] Refreshing account...", flush=True)
     account=refresh()
     profile=account["profile"]
+    print(f"      Signed in as {profile['name']}", flush=True)
 
     natives=NATIVES/version.id
+    print("[2/5] Checking libraries...", flush=True)
     cp=_download_libraries(meta,natives)
     cp.append(str(client_jar))
+
+    print("[3/5] Checking assets...", flush=True)
     asset_index=_download_assets(meta)
     game_dir=Path(game_dir_override) if game_dir_override else GAME/version.id
     game_dir.mkdir(parents=True,exist_ok=True)
@@ -204,7 +245,12 @@ def launch(version, client_jar, meta, game_dir_override=None):
     if not main:
         raise RuntimeError("Version metadata has no mainClass.")
     from .java_manager import resolve as resolve_java
+    print("[4/5] Resolving Java...", flush=True)
     java = resolve_java(meta=meta, version_id=version.id)
+    print(f"      {java}", flush=True)
+
     cmd=[str(java),*jvm_args,main,*game_args]
-    print("Launching", version.id, "as", profile["name"])
-    return subprocess.Popen(cmd,cwd=game_dir)
+    print(f"[5/5] Launching Minecraft {version.id} as {profile['name']}...", flush=True)
+    proc=subprocess.Popen(cmd,cwd=game_dir)
+    print(f"      PID {proc.pid}", flush=True)
+    return proc
