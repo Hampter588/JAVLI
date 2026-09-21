@@ -1,6 +1,6 @@
 # Builds and releases
 
-GitHub Actions builds MCLI after every pushed commit and can also be run manually.
+GitHub Actions builds JAVLI after every pushed commit and can also be run manually.
 
 Targets: Windows x64/x86, Linux x64/x86, macOS Intel/Apple Silicon.
 
