@@ -25,7 +25,7 @@ bootstrap.write_text(
 
 args = [
     str(bootstrap),
-    "--name=mcli",
+    "--name=javli",
     "--onefile",
     "--clean",
     "--noconfirm",
@@ -39,7 +39,7 @@ try:
 finally:
     bootstrap.unlink(missing_ok=True)
 
-exe = dist / ("mcli.exe" if os.name == "nt" else "mcli")
+exe = dist / ("javli.exe" if os.name == "nt" else "javli")
 if not exe.exists():
     raise SystemExit(f"Expected binary not found: {exe}")
 
