@@ -216,6 +216,25 @@ def cmd_modpack(args):
         print("Installed modpack:",idx.get("name","Modrinth pack"))
         print("Minecraft:",idx.get("dependencies",{}).get("minecraft","?"))
 
+def cmd_content(args):
+    from .modrinth import search, install_content, list_content, remove_content
+    project_type="resourcepack" if args.command=="resourcepack" else "shader"
+    action=args.content_action
+    if action=="search":
+        hits=search(args.query,project_type,args.limit,args.minecraft,None)
+        for h in hits:
+            print(f'{h["project_id"]:10} {h["title"]} — {h.get("description","")}')
+    elif action=="install":
+        path=install_content(args.project,args.instance,project_type)
+        print("Installed",path.name)
+    elif action=="list":
+        for p in list_content(args.instance,project_type):
+            print(p.name)
+    elif action=="remove":
+        hits=remove_content(args.name,args.instance,project_type)
+        for p in hits: print("Removed",p.name)
+        if not hits: print("No matching installed content.")
+
 def cmd_server(args):
     from .servers import create, list_servers, start, stop, status, delete, accept_eula, properties
     a=args.server_action
@@ -305,6 +324,14 @@ def build_parser():
     pst.add_argument("--source", choices=["auto","mojang","omniarchive"], default="auto")
     pst.set_defaults(func=cmd_stats)
 
+
+    for content_cmd in ("resourcepack","shader"):
+        pc=sub.add_parser(content_cmd)
+        cs=pc.add_subparsers(dest="content_action",required=True)
+        csearch=cs.add_parser("search"); csearch.add_argument("query"); csearch.add_argument("--minecraft"); csearch.add_argument("--limit",type=int,default=10); csearch.set_defaults(func=cmd_content)
+        cinstall=cs.add_parser("install"); cinstall.add_argument("project"); cinstall.add_argument("--instance",required=True); cinstall.set_defaults(func=cmd_content)
+        clist=cs.add_parser("list"); clist.add_argument("--instance",required=True); clist.set_defaults(func=cmd_content)
+        crem=cs.add_parser("remove"); crem.add_argument("name"); crem.add_argument("--instance",required=True); crem.set_defaults(func=cmd_content)
 
     pm = sub.add_parser("mods")
     ms = pm.add_subparsers(dest="mods_action", required=True)
