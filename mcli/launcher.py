@@ -53,7 +53,11 @@ def _download_libraries(meta, natives_dir):
         downloads=lib.get("downloads", {})
         artifact=downloads.get("artifact")
         if artifact and artifact.get("url"):
-            dest=LIBRARIES / artifact["path"]
+            path=artifact.get("path")
+            if path:
+                dest=LIBRARIES / path
+            else:
+                dest=_artifact_path(lib["name"])
             if not dest.exists():
                 download(artifact["url"], dest, artifact.get("sha1"))
             cp.append(str(dest))
@@ -186,12 +190,6 @@ def _modern_args(meta, vars):
 
 def launch(version, client_jar, meta, game_dir_override=None):
     ensure()
-    if version.source != "mojang":
-        raise RuntimeError(
-            "Full JVM launch is implemented for Mojang metadata first. "
-            "Omniarchive historical launch compatibility is the next layer."
-        )
-
     account=load_account()
     if not account:
         raise AuthError("No Microsoft account saved. Run: mcli login")
@@ -219,6 +217,11 @@ def launch(version, client_jar, meta, game_dir_override=None):
         "assets_index_name":asset_index,
         "auth_uuid":profile["id"],
         "auth_access_token":account["minecraft_access_token"],
+        "auth_session":account["minecraft_access_token"],
+        "profile_name":"MCLI",
+        "instance_icon":"",
+        "server_ip":"",
+        "server_port":"",
         "clientid":"",
         "auth_xuid":"",
         "user_type":"msa",
