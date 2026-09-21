@@ -1,0 +1,10 @@
+pkgname=mcli
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Minecraft Command-Line Launcher"
+arch=('x86_64' 'aarch64')
+url="https://github.com/Hampter588/MCLI"
+license=('MIT')
+source=("mcli")
+sha256sums=('SKIP')
+package() { install -Dm755 "$srcdir/mcli" "$pkgdir/usr/bin/mcli"; }
