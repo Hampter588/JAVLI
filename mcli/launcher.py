@@ -1,4 +1,5 @@
 import json, os, platform, re, shutil, subprocess, zipfile
+from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from .cache import ROOT, VERSIONS, ensure
@@ -82,11 +83,19 @@ def _download_libraries(meta, natives_dir):
         nat=lib.get("natives", {}).get(_os_name())
         if nat:
             nat=nat.replace("${arch}", _arch())
-            c=classifiers.get(nat)
-            if c and c.get("url"):
-                dest=LIBRARIES / c["path"]
+            native_artifact=classifiers.get(nat)
+            if native_artifact and native_artifact.get("url"):
+                native_path=native_artifact.get("path")
+                if native_path:
+                    dest=LIBRARIES / native_path
+                elif lib.get("name"):
+                    base_dest=_artifact_path(lib["name"])
+                    dest=base_dest.with_name(base_dest.stem+"-"+nat+".jar")
+                else:
+                    filename=urlparse(native_artifact["url"]).path.rsplit("/",1)[-1] or (nat+".jar")
+                    dest=LIBRARIES/"legacy-natives"/filename
                 if not dest.exists():
-                    download(c["url"], dest, c.get("sha1"))
+                    download(native_artifact["url"], dest, native_artifact.get("sha1"))
                 with zipfile.ZipFile(dest) as z:
                     excludes=(lib.get("extract") or {}).get("exclude", ["META-INF/"])
                     for member in z.infolist():
