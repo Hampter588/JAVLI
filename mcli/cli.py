@@ -81,7 +81,7 @@ def cmd_launch(args):
             proc, lv, profile = launch_installer_profile(selected, v, path, meta, loader_version=args.loader_version)
             print(f"Started {selected} {lv} on Minecraft {v.id} (PID {proc.pid})")
             return
-    if v.source == "omniarchive":
+    if v.source == "omniarchive" and not meta.get("mainClass"):
         from .legacy import launch_legacy
         proc = launch_legacy(v, path)
     else:
