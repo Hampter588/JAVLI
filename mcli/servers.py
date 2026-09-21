@@ -7,7 +7,7 @@ from .net import download
 
 SERVERS=ROOT/"servers"
 INDEX=ROOT/"servers.json"
-UA="mcli/0.11"
+UA="MCLI/1.0 (https://github.com/Hampter588/MCLI)"
 
 class ServerError(RuntimeError): pass
 
@@ -41,15 +41,41 @@ def _mojang_server(version):
     return art,meta
 
 def _paper(version):
-    api=f"https://api.papermc.io/v2/projects/paper/versions/{version}"
+    # PaperMC retired the old api.papermc.io v2 downloads API.
+    # Fill v3 returns build objects directly and includes canonical download URLs.
+    api=f"https://fill.papermc.io/v3/projects/paper/versions/{version}/builds"
     r=requests.get(api,timeout=30,headers={"User-Agent":UA})
-    if not r.ok: raise ServerError(f"Paper has no build for {version}")
-    builds=r.json().get("builds",[])
-    if not builds: raise ServerError(f"Paper has no build for {version}")
-    build=builds[-1]
-    info=requests.get(f"{api}/builds/{build}",timeout=30,headers={"User-Agent":UA}).json()
-    name=info["downloads"]["application"]["name"]
-    return f"{api}/builds/{build}/downloads/{name}",build
+    if not r.ok:
+        try:
+            msg=(r.json() or {}).get("message")
+        except Exception:
+            msg=None
+        raise ServerError(msg or f"Paper has no build for {version}")
+
+    data=r.json()
+    if isinstance(data,dict) and data.get("ok") is False:
+        raise ServerError(data.get("message") or f"Paper has no build for {version}")
+    builds=data if isinstance(data,list) else data.get("builds",[])
+    if not builds:
+        raise ServerError(f"Paper has no build for {version}")
+
+    # Prefer the newest stable build. If a version only has experimental builds,
+    # use the newest available build rather than incorrectly claiming it doesn't exist.
+    stable=[b for b in builds if str(b.get("channel","")).upper()=="STABLE"]
+    candidates=stable or builds
+
+    def build_number(b):
+        value=b.get("id",b.get("number",0))
+        try: return int(value)
+        except Exception: return 0
+
+    build=max(candidates,key=build_number)
+    downloads=build.get("downloads") or {}
+    app=downloads.get("server:default") or downloads.get("application") or {}
+    url=app.get("url")
+    if not url:
+        raise ServerError(f"Paper build {build_number(build)} for {version} has no server download URL")
+    return url,build_number(build)
 
 def create(name,version,kind="vanilla",memory="2G"):
     if not _safe(name): raise ServerError("Server name may contain letters, numbers, dot, underscore and dash.")
