@@ -1,13 +1,13 @@
-# mcli
-# ALERT MCLI HAS ONLY BEEN  TESTED ON WINDOWS 64 IT MAY NOT WORK AS EXPECTED PLEASE REPORT IISSUES
+# JAVLI
+# ALERT JAVLI HAS ONLY BEEN  TESTED ON WINDOWS 64 IT MAY NOT WORK AS EXPECTED PLEASE REPORT IISSUES
 **The Minecraft Command-Line Launcher**
 
-MCLI brings modern Minecraft, historical builds, Microsoft accounts, Java runtimes, instances, modloaders, mods and servers under one command-line interface.
+JAVLI brings modern Minecraft, historical builds, Microsoft accounts, Java runtimes, instances, modloaders, mods and servers under one command-line interface.
 
 ```console
-$ mcli release 1.21.1
-$ mcli beta b1.7.3
-$ mcli classic c0.30
+$ javli release 1.21.1
+$ javli beta b1.7.3
+$ javli classic c0.30
 ```
 
 ## Install
@@ -16,8 +16,8 @@ Requires Python 3.10+.
 
 ```bash
 python -m pip install -e .
-mcli login
-mcli release 1.21.1
+javli login
+javli release 1.21.1
 ```
 
 ## Sources
@@ -28,44 +28,44 @@ mcli release 1.21.1
 ## Versions
 
 ```bash
-mcli versions
-mcli versions --historical
-mcli versions --source omniarchive
-mcli versions --type beta
-mcli search "1.7"
-mcli info 1.21.1
-mcli stats
+javli versions
+javli versions --historical
+javli versions --source omniarchive
+javli versions --type beta
+javli search "1.7"
+javli info 1.21.1
+javli stats
 ```
 
 ## Microsoft accounts
 
 ```bash
-mcli login --alias main
-mcli login --alias alt
-mcli account list
-mcli account use main
-mcli account refresh
-mcli account remove alt
+javli login --alias main
+javli login --alias alt
+javli account list
+javli account use main
+javli account refresh
+javli account remove alt
 ```
 
 ## Java
 
 ```bash
-mcli java list
-mcli java install 8
-mcli java install 17
-mcli java install 21
+javli java list
+javli java install 8
+javli java install 17
+javli java install 21
 ```
 
-MCLI can select a managed Java runtime based on Minecraft metadata.
+JAVLI can select a managed Java runtime based on Minecraft metadata.
 
 ## Instances
 
 ```bash
-mcli instance create survival release 1.21.1
-mcli instance launch survival
-mcli instance list
-mcli instance clone survival survival-copy
+javli instance create survival release 1.21.1
+javli instance launch survival
+javli instance list
+javli instance clone survival survival-copy
 ```
 
 Instances isolate saves, settings, configs, mods, resource packs and screenshots.
@@ -73,49 +73,49 @@ Instances isolate saves, settings, configs, mods, resource packs and screenshots
 ## Modloaders
 
 ```bash
-mcli release 1.21.1 --fabric
-mcli release 1.21.1 --quilt
-mcli release 1.20.1 --forge
-mcli release 1.21.1 --neoforge
+javli release 1.21.1 --fabric
+javli release 1.21.1 --quilt
+javli release 1.20.1 --forge
+javli release 1.21.1 --neoforge
 ```
 
 ## Modrinth
 
 ```bash
-mcli mods search sodium --minecraft 1.21.1 --loader fabric
-mcli mods install sodium --instance survival --loader fabric
-mcli mods list --instance survival
+javli mods search sodium --minecraft 1.21.1 --loader fabric
+javli mods install sodium --instance survival --loader fabric
+javli mods list --instance survival
 
-mcli modpack search "fabulously optimized"
-mcli modpack install fabulously-optimized --instance survival
+javli modpack search "fabulously optimized"
+javli modpack install fabulously-optimized --instance survival
 ```
 
 ## Servers
 
 ```bash
-mcli server create smp 1.21.1
-mcli server create paper-smp 1.21.1 --kind paper --memory 4G
-mcli server eula smp
-mcli server start smp
-mcli server status smp
-mcli server stop smp
+javli server create smp 1.21.1
+javli server create paper-smp 1.21.1 --kind paper --memory 4G
+javli server eula smp
+javli server start smp
+javli server status smp
+javli server stop smp
 ```
 
-MCLI does not accept Mojang's EULA automatically.
+JAVLI does not accept Mojang's EULA automatically.
 
 ## Random Minecraft
 
 ```bash
-mcli random
-mcli random --historical
-mcli random --source omniarchive
-mcli random --type beta
-mcli random --dry-run
+javli random
+javli random --historical
+javli random --source omniarchive
+javli random --type beta
+javli random --dry-run
 ```
 
 ## Data
 
-Managed data lives under `~/.mcli/`:
+Managed data lives under `~/.javli/`:
 
 ```text
 accounts.json
@@ -133,7 +133,7 @@ Treat `accounts.json` as sensitive because it may contain authentication refresh
 
 ## Project status
 
-MCLI 1.0 contains the major launcher architecture and feature set, but should still be treated as an early project until launch paths have been extensively tested across Minecraft versions, operating systems, Java runtimes and modloader combinations. Historical builds can require version-specific compatibility work.
+JAVLI 1.0 contains the major launcher architecture and feature set, but should still be treated as an early project until launch paths have been extensively tested across Minecraft versions, operating systems, Java runtimes and modloader combinations. Historical builds can require version-specific compatibility work.
 
 ## Roadmap
 
@@ -141,19 +141,19 @@ MCLI 1.0 contains the major launcher architecture and feature set, but should st
 - mod updates and compatibility management
 - import Prism/MultiMC/existing `.minecraft` instances
 - download progress, retries and resume
-- crash diagnostics and `mcli doctor`
+- crash diagnostics and `javli doctor`
 - server console and backups
 - stronger historical compatibility profiles
 - packaged Windows/macOS/Linux releases
 
 ## Disclaimer
 
-MCLI is an independent project and is not affiliated with, endorsed by, or sponsored by Mojang Studios or Microsoft. Minecraft is a trademark of Microsoft Corporation.
+JAVLI is an independent project and is not affiliated with, endorsed by, or sponsored by Mojang Studios or Microsoft. Minecraft is a trademark of Microsoft Corporation.
 
 
 ## Standalone binaries
 
-MCLI's GitHub Actions workflow builds standalone executables for the six primary desktop OS/architecture targets:
+JAVLI's GitHub Actions workflow builds standalone executables for the six primary desktop OS/architecture targets:
 
 - Windows x64
 - Windows ARM64
@@ -162,11 +162,11 @@ MCLI's GitHub Actions workflow builds standalone executables for the six primary
 - macOS Intel (x86_64)
 - macOS Apple Silicon (ARM64)
 
-Run **Build MCLI binaries** manually from GitHub Actions, or push a version tag such as `v1.0.1`.
+Run **Build JAVLI binaries** manually from GitHub Actions, or push a version tag such as `v1.0.1`.
 Tagged builds are also attached to the GitHub Release.
 
-The packaged MCLI executable includes Python and its Python dependencies; users do not need to install Python.
-Minecraft's required Java runtimes continue to be managed separately by MCLI.
+The packaged JAVLI executable includes Python and its Python dependencies; users do not need to install Python.
+Minecraft's required Java runtimes continue to be managed separately by JAVLI.
 
 
 ## Linux distribution packages
@@ -227,4 +227,4 @@ The manual build workflow also contains experimental jobs for the long-tail arch
 - OpenBSD ARM64
 - NetBSD ARM64
 
-These are intentionally labeled **experimental**. The workflow uses native/VM builds where practical and QEMU containers for exotic Linux architectures. A successful MCLI binary build proves the CLI can be packaged for that target; it does **not** prove every Minecraft generation will launch there. Minecraft/LWJGL native availability, graphics drivers and Java runtime availability remain target-specific constraints.
+These are intentionally labeled **experimental**. The workflow uses native/VM builds where practical and QEMU containers for exotic Linux architectures. A successful JAVLI binary build proves the CLI can be packaged for that target; it does **not** prove every Minecraft generation will launch there. Minecraft/LWJGL native availability, graphics drivers and Java runtime availability remain target-specific constraints.
