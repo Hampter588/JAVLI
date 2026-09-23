@@ -1,8 +1,8 @@
-Package: mcli
+Package: javli
 Version: VERSION
 Section: games
 Priority: optional
 Architecture: ARCH
-Maintainer: MCLI Project
+Maintainer: javli Project
 Description: Minecraft Command-Line Launcher
  Launch modern and historical Minecraft from the terminal.
