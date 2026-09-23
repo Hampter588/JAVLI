@@ -1,13 +1,13 @@
-pkgname=mcli
+pkgname=javli
 pkgver=1.0.0
 pkgrel=1
 pkgdesc="Minecraft Command-Line Launcher"
 arch=('x86_64' 'aarch64')
 url="https://github.com/OWNER/REPO"
 license=('MIT')
-source=("mcli")
+source=("javli")
 sha256sums=('SKIP')
 
 package() {
-  install -Dm755 "$srcdir/mcli" "$pkgdir/usr/bin/mcli"
+  install -Dm755 "$srcdir/javli" "$pkgdir/usr/bin/javli"
 }
