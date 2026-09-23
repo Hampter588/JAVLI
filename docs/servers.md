@@ -9,4 +9,4 @@ javli server status smp
 javli server stop smp
 ```
 
-JAVLI does not automatically accept Mojang's EULA.
+javli does not automatically accept Mojang's EULA.
