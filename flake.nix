@@ -1,5 +1,5 @@
 {
-  description = "MCLI — Minecraft Command-Line Launcher";
+  description = "javli — Minecraft Command-Line Launcher";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   outputs = { self, nixpkgs }:
     let
@@ -10,7 +10,7 @@
         let pkgs = import nixpkgs { inherit system; };
         in {
           default = pkgs.python3Packages.buildPythonApplication {
-            pname = "mcli";
+            pname = "javli";
             version = "1.0.0";
             format = "pyproject";
             src = ./.;
@@ -21,7 +21,7 @@
       apps = forAllSystems (system: {
         default = {
           type = "app";
-          program = "${self.packages.${system}.default}/bin/mcli";
+          program = "${self.packages.${system}.default}/bin/javli";
         };
       });
     };
