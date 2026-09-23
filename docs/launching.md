@@ -10,7 +10,7 @@ javli classic <version>
 javli preclassic <version>
 ```
 
-JAVLI resolves the version, downloads required libraries/assets, selects Java, and starts Minecraft.
+javli resolves the version, downloads required libraries/assets, selects Java, and starts Minecraft.
 
 Asset downloads use 32 concurrent workers and are cached under `~/.javli/assets`.
 
