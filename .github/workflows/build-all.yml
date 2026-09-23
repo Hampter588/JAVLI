@@ -1,4 +1,4 @@
-name: Build JAVLI binaries
+name: Build javli binaries
 
 on:
   push:
@@ -103,5 +103,5 @@ jobs:
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" release-assets/* --clobber --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$TAG" release-assets/* --target "$GITHUB_SHA" --title "JAVLI $TAG" --generate-notes --repo "$GITHUB_REPOSITORY"
+            gh release create "$TAG" release-assets/* --target "$GITHUB_SHA" --title "javli $TAG" --generate-notes --repo "$GITHUB_REPOSITORY"
           fi
