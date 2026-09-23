@@ -1,8 +1,8 @@
-# JAVLI
-# ALERT JAVLI HAS ONLY BEEN  TESTED ON WINDOWS 64 IT MAY NOT WORK AS EXPECTED PLEASE REPORT IISSUES
+# javli
+# ALERT javli HAS ONLY BEEN  TESTED ON WINDOWS 64 IT MAY NOT WORK AS EXPECTED PLEASE REPORT IISSUES
 **The Minecraft Command-Line Launcher**
 
-JAVLI brings modern Minecraft, historical builds, Microsoft accounts, Java runtimes, instances, modloaders, mods and servers under one command-line interface.
+javli brings modern Minecraft, historical builds, Microsoft accounts, Java runtimes, instances, modloaders, mods and servers under one command-line interface.
 
 ```console
 $ javli release 1.21.1
@@ -57,7 +57,7 @@ javli java install 17
 javli java install 21
 ```
 
-JAVLI can select a managed Java runtime based on Minecraft metadata.
+javli can select a managed Java runtime based on Minecraft metadata.
 
 ## Instances
 
@@ -101,7 +101,7 @@ javli server status smp
 javli server stop smp
 ```
 
-JAVLI does not accept Mojang's EULA automatically.
+javli does not accept Mojang's EULA automatically.
 
 ## Random Minecraft
 
@@ -133,7 +133,7 @@ Treat `accounts.json` as sensitive because it may contain authentication refresh
 
 ## Project status
 
-JAVLI 1.0 contains the major launcher architecture and feature set, but should still be treated as an early project until launch paths have been extensively tested across Minecraft versions, operating systems, Java runtimes and modloader combinations. Historical builds can require version-specific compatibility work.
+javli 1.0 contains the major launcher architecture and feature set, but should still be treated as an early project until launch paths have been extensively tested across Minecraft versions, operating systems, Java runtimes and modloader combinations. Historical builds can require version-specific compatibility work.
 
 ## Roadmap
 
@@ -148,12 +148,12 @@ JAVLI 1.0 contains the major launcher architecture and feature set, but should s
 
 ## Disclaimer
 
-JAVLI is an independent project and is not affiliated with, endorsed by, or sponsored by Mojang Studios or Microsoft. Minecraft is a trademark of Microsoft Corporation.
+javli is an independent project and is not affiliated with, endorsed by, or sponsored by Mojang Studios or Microsoft. Minecraft is a trademark of Microsoft Corporation.
 
 
 ## Standalone binaries
 
-JAVLI's GitHub Actions workflow builds standalone executables for the six primary desktop OS/architecture targets:
+javli's GitHub Actions workflow builds standalone executables for the six primary desktop OS/architecture targets:
 
 - Windows x64
 - Windows ARM64
@@ -162,10 +162,10 @@ JAVLI's GitHub Actions workflow builds standalone executables for the six primar
 - macOS Intel (x86_64)
 - macOS Apple Silicon (ARM64)
 
-Run **Build JAVLI binaries** manually from GitHub Actions, or push a version tag such as `v1.0.1`.
+Run **Build javli binaries** manually from GitHub Actions, or push a version tag such as `v1.0.1`.
 Tagged builds are also attached to the GitHub Release.
 
-The packaged JAVLI executable includes Python and its Python dependencies; users do not need to install Python.
-Minecraft's required Java runtimes continue to be managed separately by JAVLI.
+The packaged javli executable includes Python and its Python dependencies; users do not need to install Python.
+Minecraft's required Java runtimes continue to be managed separately by javli.
 
 
