@@ -148,7 +148,7 @@ def cmd_instance(args):
     from pathlib import Path
     from .instances import create, get, list_instances, delete, clone, set_value
     if args.instance_action == "create":
-        obj=create(args.name,args.era,args.version,args.source)
+        obj=create(args.name,args.era,args.version,args.source,getattr(args,"loader",None),getattr(args,"loader_version",None))
         print(f'Created instance {obj["name"]}: {obj["era"]} {obj["version"]}')
         print(obj["path"])
     elif args.instance_action == "list":
@@ -156,7 +156,8 @@ def cmd_instance(args):
         if not rows:
             print("No instances.")
         for x in rows:
-            print(f'{x["name"]:20} {x["era"]:10} {x["version"]:20} {x["source"]}')
+            loader=x.get("loader","vanilla")
+            print(f'{x["name"]:20} {x["era"]:10} {x["version"]:20} {x["source"]:12} {loader}')
     elif args.instance_action == "info":
         print(json.dumps(get(args.name),indent=2))
     elif args.instance_action == "delete":
@@ -175,6 +176,21 @@ def cmd_instance(args):
             raise SystemExit(f'Version not found: {obj["version"]}')
         path,meta=install(v)
         game_dir=Path(obj["path"])/"minecraft"
+        loader=obj.get("loader")
+        loader_version=obj.get("loader_version")
+        if loader:
+            if v.source != "mojang":
+                raise SystemExit("Modloaders are supported on Mojang-backed versions, not raw Omniarchive jars.")
+            if loader in ("fabric","quilt"):
+                from .loader_launch import launch_profile
+                proc,lv=launch_profile(loader,v,path,meta,game_dir,loader_version)
+                print(f'Started {loader} {lv} from instance {args.name} (PID {proc.pid})')
+                return
+            if loader in ("forge","neoforge"):
+                from .loader_launch import launch_installer_profile
+                proc,lv,_=launch_installer_profile(loader,v,path,meta,game_dir,loader_version)
+                print(f'Started {loader} {lv} from instance {args.name} (PID {proc.pid})')
+                return
         if v.source=="omniarchive":
             from .legacy import launch_legacy
             proc=launch_legacy(v,path,game_dir)
@@ -361,6 +377,8 @@ def build_parser():
     ic.add_argument("era", choices=ERA_TYPES)
     ic.add_argument("version")
     ic.add_argument("--source", choices=["auto","mojang","omniarchive"], default="auto")
+    ic.add_argument("--loader", choices=["fabric","forge","neoforge","quilt"])
+    ic.add_argument("--loader-version")
     ic.set_defaults(func=cmd_instance)
 
     il = ins.add_parser("list")
@@ -386,7 +404,7 @@ def build_parser():
 
     ise = ins.add_parser("set")
     ise.add_argument("name")
-    ise.add_argument("key", choices=["version","era","source"])
+    ise.add_argument("key", choices=["version","era","source","loader","loader_version"])
     ise.add_argument("value")
     ise.set_defaults(func=cmd_instance)
 
