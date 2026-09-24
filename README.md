@@ -62,13 +62,14 @@ javli can select a managed Java runtime based on Minecraft metadata.
 ## Instances
 
 ```bash
-javli instance create survival release 1.21.1
+javli instance create survival release 1.21.1 --loader fabric
 javli instance launch survival
 javli instance list
 javli instance clone survival survival-copy
+javli instance set survival loader fabric
 ```
 
-Instances isolate saves, settings, configs, mods, resource packs and screenshots.
+Instances isolate saves, settings, configs, mods, resource packs and screenshots. Instances can persist a modloader (Fabric, Quilt, Forge or NeoForge), so `javli instance launch <name>` automatically launches through the configured loader.
 
 ## Modloaders
 
