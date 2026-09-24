@@ -21,7 +21,7 @@ def _save(data):
 def valid_name(name):
     return bool(re.fullmatch(r"[A-Za-z0-9._-]+",name))
 
-def create(name, era, version, source="auto"):
+def create(name, era, version, source="auto", loader=None, loader_version=None):
     if not valid_name(name):
         raise InstanceError("Instance names may contain letters, numbers, dot, underscore and dash.")
     data=_load()
@@ -32,6 +32,10 @@ def create(name, era, version, source="auto"):
     for sub in ("minecraft","mods","resourcepacks","shaderpacks","screenshots"):
         (path/sub).mkdir(exist_ok=True)
     obj={"name":name,"era":era,"version":version,"source":source,"path":str(path)}
+    if loader:
+        obj["loader"]=loader
+        if loader_version:
+            obj["loader_version"]=loader_version
     (path/"instance.json").write_text(json.dumps(obj,indent=2),encoding="utf-8")
     data[name]=obj
     _save(data)
@@ -73,8 +77,8 @@ def clone(src, dest):
 def set_value(name,key,value):
     data=_load()
     if name not in data: raise InstanceError(f"Unknown instance: {name}")
-    if key not in ("version","era","source"):
-        raise InstanceError("Editable fields: version, era, source")
+    if key not in ("version","era","source","loader","loader_version"):
+        raise InstanceError("Editable fields: version, era, source, loader, loader_version")
     data[name][key]=value
     p=Path(data[name]["path"])/"instance.json"
     p.write_text(json.dumps(data[name],indent=2),encoding="utf-8")
