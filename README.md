@@ -144,8 +144,6 @@ javli 1.0 contains the major launcher architecture and feature set, but should s
 - download progress, retries and resume
 - crash diagnostics and `javli doctor`
 - server console and backups
-- stronger historical compatibility profiles
-- packaged Windows/macOS/Linux releases
 
 ## Disclaimer
 
