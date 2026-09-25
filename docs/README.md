@@ -1,6 +1,6 @@
 # javli Documentation
 
-javli is a command-line Minecraft Java launcher supporting Mojang versions, historical builds, Microsoft authentication, managed Java runtimes, instances, modloaders, Modrinth, and servers.
+javli is a command-line Minecraft Java launcher supporting Mojang versions, historical builds, Microsoft authentication, managed Java runtimes, instances, modloaders, Modrinth, CurseForge, modpacks, resource packs, shaders, and servers.
 
 ## Start here
 
@@ -8,7 +8,7 @@ javli is a command-line Minecraft Java launcher supporting Mojang versions, hist
 - [Launching Minecraft](launching.md)
 - [Accounts](accounts.md)
 - [Instances](instances.md)
-- [Mods and modloaders](mods.md)
+- [Mods, modloaders and content](mods.md)
 - [Servers](servers.md)
 - [Builds and releases](builds.md)
 
