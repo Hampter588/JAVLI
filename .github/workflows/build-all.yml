@@ -28,10 +28,13 @@ jobs:
       - name: Build Linux 32-bit in i386 container
         if: matrix.linux32 == true
         shell: bash
+        env:
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
         run: |
-          docker run --rm --platform linux/386 -v "$PWD:/src" -w /src i386/debian:bookworm sh -lc '
+          docker run --rm -e CURSEFORGE_API_KEY --platform linux/386 -v "$PWD:/src" -w /src i386/debian:bookworm sh -lc '
             apt-get update &&
             apt-get install -y python3 python3-pip python3-venv build-essential &&
+            printf "CURSEFORGE_API_KEY = %s\\n" "${CURSEFORGE_API_KEY@Q}" > mcli/_build_secrets.py &&
             python3 -m venv .venv32 &&
             .venv32/bin/pip install --upgrade pip &&
             .venv32/bin/pip install . "pyinstaller>=6.16,<7" &&
@@ -44,6 +47,18 @@ jobs:
           python-version: ${{ matrix.python }}
           architecture: ${{ matrix.architecture }}
           cache: pip
+      - name: Inject CurseForge API key
+        if: matrix.linux32 != true
+        shell: bash
+        env:
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          key=os.environ.get("CURSEFORGE_API_KEY","")
+          Path("mcli/_build_secrets.py").write_text("CURSEFORGE_API_KEY = "+repr(key)+"\n",encoding="utf-8")
+          PY
       - name: Install build dependencies
         if: matrix.linux32 != true
         run: |
