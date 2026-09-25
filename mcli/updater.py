@@ -38,7 +38,45 @@ def _extract(archive, dest):
     else:
         raise UpdateError("Unknown JAVLI release archive format.")
 
-def update(silent=False):
+def _current_release_tag():
+    # Official manual releases are named manual-<run>. Use the embedded build
+    # marker when available; otherwise fall back to executable mtime.
+    try:
+        from ._build_info import RELEASE_TAG
+        return RELEASE_TAG
+    except Exception:
+        return os.getenv("JAVLI_RELEASE_TAG","")
+
+def prompt_if_update_available():
+    if not getattr(sys,"frozen",False) or not sys.stdin.isatty():
+        return False
+    try:
+        release=release or _latest_release()
+        latest=release.get("tag_name","")
+        current=_current_release_tag()
+        if not latest or latest==current:
+            return False
+        # If no build tag is embedded (older binary), offer the latest release once.
+        print("\n+------------------------------------------+")
+        print("|           javli update available         |")
+        print("+------------------------------------------+")
+        if current:
+            print(f"  Current: {current}")
+        print(f"  Latest:  {latest}")
+        print("\n  [1] Yes, update now")
+        print("  [2] No, continue")
+        while True:
+            choice=input("\nChoose 1 or 2: ").strip().lower()
+            if choice in ("1","y","yes"):
+                update(release=release)
+                return True
+            if choice in ("2","n","no",""):
+                return False
+            print("Please choose 1 or 2.")
+    except (requests.RequestException, OSError, UpdateError):
+        return False
+
+def update(silent=False, release=None):
     if getattr(sys,"frozen",False):
         current=Path(sys.executable).resolve()
     else:
