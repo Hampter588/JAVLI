@@ -2,9 +2,9 @@ import json, os, platform, shutil, stat, sys, tarfile, tempfile, zipfile
 from pathlib import Path
 import requests
 
-REPO="Hampter588/JAVLI"
+REPO="JAVBED/javli"
 API=f"https://api.github.com/repos/{REPO}/releases/latest"
-UA="JAVLI/1.0 (https://github.com/Hampter588/JAVLI)"
+UA="JAVLI/1.0 (https://github.com/JAVBED/javli)"
 
 class UpdateError(RuntimeError):
     pass
@@ -38,7 +38,7 @@ def _extract(archive, dest):
     else:
         raise UpdateError("Unknown JAVLI release archive format.")
 
-def update():
+def update(silent=False):
     if getattr(sys,"frozen",False):
         current=Path(sys.executable).resolve()
     else:
@@ -52,8 +52,9 @@ def update():
         available=", ".join(sorted(assets)) or "none"
         raise UpdateError(f"Release {release.get('tag_name','?')} has no {asset_name}. Available: {available}")
 
-    print(f"Latest release: {release.get('name') or release.get('tag_name')}")
-    print(f"Downloading {asset_name}...")
+    if not silent:
+        print(f"Latest release: {release.get('name') or release.get('tag_name')}")
+        print(f"Downloading {asset_name}...")
 
     with tempfile.TemporaryDirectory(prefix="javli-update-") as td:
         td=Path(td)
