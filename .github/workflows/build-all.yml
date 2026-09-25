@@ -34,7 +34,7 @@ jobs:
           docker run --rm -e CURSEFORGE_API_KEY --platform linux/386 -v "$PWD:/src" -w /src i386/debian:bookworm sh -lc '
             apt-get update &&
             apt-get install -y python3 python3-pip python3-venv build-essential &&
-            printf "CURSEFORGE_API_KEY = %s\\n" "${CURSEFORGE_API_KEY@Q}" > mcli/_build_secrets.py &&
+            CURSEFORGE_API_KEY="$CURSEFORGE_API_KEY" python3 -c 'import os, pathlib; pathlib.Path("mcli/_build_secrets.py").write_text("CURSEFORGE_API_KEY = " + repr(os.environ.get("CURSEFORGE_API_KEY", "")) + "\\n", encoding="utf-8")' &&
             python3 -m venv .venv32 &&
             .venv32/bin/pip install --upgrade pip &&
             .venv32/bin/pip install . "pyinstaller>=6.16,<7" &&
