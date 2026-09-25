@@ -497,6 +497,14 @@ def build_parser():
 
 def main():
     args = build_parser().parse_args()
+    if args.command != "update":
+        try:
+            from .updater import prompt_if_update_available
+            if prompt_if_update_available():
+                print("Update installed. Run your javli command again.")
+                return
+        except Exception:
+            pass
     args.func(args)
 
 if __name__ == "__main__":
