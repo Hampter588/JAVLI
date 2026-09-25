@@ -91,6 +91,27 @@ javli modpack search "fabulously optimized"
 javli modpack install fabulously-optimized --instance survival
 ```
 
+## CurseForge
+
+CurseForge support uses your own API key from the `CURSEFORGE_API_KEY` environment variable. The key is never stored by javli.
+
+Windows CMD:
+
+```bat
+setx CURSEFORGE_API_KEY "YOUR_KEY_HERE"
+```
+
+Close that terminal and open a new one after running `setx`.
+
+Search and install:
+
+```bash
+javli mods search jei --minecraft 1.21.1 --loader neoforge --provider curseforge
+javli mods install <project-id-or-slug> --instance survival --provider curseforge
+```
+
+Modrinth remains the default provider when `--provider` is omitted. CurseForge projects that do not expose an API download URL must be downloaded manually from their CurseForge project page.
+
 ## Servers
 
 ```bash
@@ -138,7 +159,6 @@ javli 1.0 contains the major launcher architecture and feature set, but should s
 
 ## Roadmap
 
-- CurseForge integration
 - mod updates and compatibility management
 - import Prism/MultiMC/existing `.minecraft` instances
 - download progress, retries and resume
