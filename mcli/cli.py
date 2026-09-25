@@ -205,19 +205,37 @@ def cmd_loader(args):
     print(f"Installed {args.loader} {version} for Minecraft {args.minecraft}")
     print(result)
 
+def _print_mod_search_results(provider, query, hits):
+    import shutil
+    width=max(72,min(shutil.get_terminal_size((100,24)).columns,140))
+    id_width=10
+    name_width=max(22,min(36,(width-id_width-8)//2))
+    desc_width=max(20,width-id_width-name_width-7)
+    def clip(value,n):
+        value=" ".join(str(value or "").split())
+        return value if len(value)<=n else value[:max(0,n-3)].rstrip()+"..."
+    label="CurseForge" if provider=="curseforge" else "Modrinth"
+    print(f'\n{label} results for "{query}"\n')
+    print(f' {"ID":<{id_width}} {"PROJECT":<{name_width}} DESCRIPTION')
+    print(" "+"-"*(width-2))
+    for h in hits:
+        if provider=="curseforge":
+            pid=h.get("id",""); name=h.get("name",""); desc=h.get("summary","")
+        else:
+            pid=h.get("project_id",""); name=h.get("title",""); desc=h.get("description","")
+        print(f' {clip(pid,id_width):<{id_width}} {clip(name,name_width):<{name_width}} {clip(desc,desc_width)}')
+    print(f'\n{len(hits)} result{"s" if len(hits)!=1 else ""} · {label}\n')
+
 def cmd_mods(args):
     provider=getattr(args,"provider","modrinth")
     if args.mods_action=="search":
         if provider=="curseforge":
             from .curseforge import search
             hits=search(args.query,6,args.limit,args.minecraft,args.loader)
-            for h in hits:
-                print(f'{h["id"]:10} {h["name"]} — {h.get("summary","")}')
         else:
             from .modrinth import search
             hits=search(args.query,"mod",args.limit,args.minecraft,args.loader)
-            for h in hits:
-                print(f'{h["project_id"]:10} {h["title"]} — {h.get("description","")}')
+        _print_mod_search_results(provider,args.query,hits)
     elif args.mods_action=="install":
         if provider=="curseforge":
             from .curseforge import install_mod
