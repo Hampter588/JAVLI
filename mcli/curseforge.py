@@ -1,5 +1,9 @@
 import os
 from pathlib import Path
+try:
+    from ._build_secrets import CURSEFORGE_API_KEY as BUILTIN_CURSEFORGE_API_KEY
+except ImportError:
+    BUILTIN_CURSEFORGE_API_KEY=""
 import requests
 from .instances import get as get_instance
 
@@ -10,9 +14,9 @@ GAME_ID=432
 class CurseForgeError(RuntimeError): pass
 
 def _headers():
-    key=os.getenv("CURSEFORGE_API_KEY")
+    key=os.getenv("CURSEFORGE_API_KEY") or BUILTIN_CURSEFORGE_API_KEY
     if not key:
-        raise CurseForgeError("CurseForge API key is not configured. Set CURSEFORGE_API_KEY and open a new terminal.")
+        raise CurseForgeError("CurseForge API key is not configured. Official builds may include the JAVBED key; custom/source builds can set CURSEFORGE_API_KEY.")
     return {"x-api-key":key,"Accept":"application/json","User-Agent":UA}
 
 def _get(path,params=None):
