@@ -67,6 +67,12 @@ javli instance launch survival
 javli instance list
 javli instance clone survival survival-copy
 javli instance set survival loader fabric
+javli instance import "C:\\path\\to\\instance"
+javli instance import "C:\\path\\to\\instance" --name imported-pack
+```
+
+Instance import recognizes Prism/MultiMC, CurseForge, Modrinth-style, vanilla `.minecraft`, and generic Minecraft game directories. Imports copy by default; use `--move` only when you intentionally want to move the source game directory. javli refuses to guess when it cannot determine the Minecraft version.
+
 ```
 
 Instances isolate saves, settings, configs, mods, resource packs and screenshots. Instances can persist a modloader (Fabric, Quilt, Forge or NeoForge), so `javli instance launch <name>` automatically launches through the configured loader.
