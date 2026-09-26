@@ -282,35 +282,6 @@ def cmd_content(args):
         for p in hits: print("Removed",p.name)
         if not hits: print("No matching installed content.")
 
-def cmd_server(args):
-    from .servers import create, list_servers, start, stop, status, delete, accept_eula, properties
-    a=args.server_action
-    if a=="create":
-        obj,_=create(args.name,args.version,args.kind,args.memory)
-        print(f'Created {obj["kind"]} server {obj["name"]} ({obj["version"]})')
-        print(obj["path"])
-        print("EULA is NOT accepted automatically. After reading it, run:")
-        print(f"  javli server eula {obj['name']}")
-    elif a=="list":
-        for x in list_servers():
-            try: _,running=status(x["name"])
-            except Exception: running=False
-            print(f'{"RUNNING" if running else "STOPPED":8} {x["name"]:18} {x["kind"]:8} {x["version"]}')
-    elif a=="start":
-        p=start(args.name,args.foreground); print(f"Started {args.name} (PID {p.pid})")
-    elif a=="stop":
-        print("Stopped." if stop(args.name) else "Server was not running.")
-    elif a=="status":
-        obj,running=status(args.name); print("RUNNING" if running else "STOPPED",obj.get("pid") or "")
-    elif a=="eula":
-        accept_eula(args.name); print("EULA marked accepted for",args.name)
-    elif a=="delete":
-        delete(args.name,args.keep_files); print("Deleted",args.name)
-    elif a=="get":
-        v=properties(args.name,args.key); print("" if v is None else v)
-    elif a=="set":
-        properties(args.name,args.key,args.value); print(f"{args.key}={args.value}")
-
 def cmd_random(args):
     from .random_launch import launch_random
     v,proc,errors=launch_random(args.source,args.type,args.historical,args.dry_run)
@@ -347,17 +318,6 @@ def build_parser():
     pr.set_defaults(func=cmd_random)
 
 
-    psv=sub.add_parser("server")
-    sv=psv.add_subparsers(dest="server_action",required=True)
-    svc=sv.add_parser("create"); svc.add_argument("name"); svc.add_argument("version"); svc.add_argument("--kind",choices=["vanilla","paper"],default="vanilla"); svc.add_argument("--memory",default="2G"); svc.set_defaults(func=cmd_server)
-    svl=sv.add_parser("list"); svl.set_defaults(func=cmd_server)
-    svs=sv.add_parser("start"); svs.add_argument("name"); svs.add_argument("--foreground",action="store_true"); svs.set_defaults(func=cmd_server)
-    svx=sv.add_parser("stop"); svx.add_argument("name"); svx.set_defaults(func=cmd_server)
-    svt=sv.add_parser("status"); svt.add_argument("name"); svt.set_defaults(func=cmd_server)
-    sve=sv.add_parser("eula"); sve.add_argument("name"); sve.set_defaults(func=cmd_server)
-    svd=sv.add_parser("delete"); svd.add_argument("name"); svd.add_argument("--keep-files",action="store_true"); svd.set_defaults(func=cmd_server)
-    svg=sv.add_parser("get"); svg.add_argument("name"); svg.add_argument("key"); svg.set_defaults(func=cmd_server)
-    svp=sv.add_parser("set"); svp.add_argument("name"); svp.add_argument("key"); svp.add_argument("value"); svp.set_defaults(func=cmd_server)
 
 
     ps = sub.add_parser("search")
