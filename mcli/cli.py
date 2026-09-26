@@ -169,6 +169,16 @@ def cmd_instance(args):
     elif args.instance_action == "set":
         obj=set_value(args.name,args.key,args.value)
         print(json.dumps(obj,indent=2))
+    elif args.instance_action == "import":
+        from .instance_import import inspect, import_instance
+        info=inspect(args.path)
+        print(f'Detected: {info["launcher"]}')
+        print(f'Name: {info["name"]}')
+        print(f'Minecraft: {info.get("version") or "unknown"}')
+        print(f'Loader: {info.get("loader") or "vanilla"}' + (f' {info.get("loader_version")}' if info.get("loader_version") else ""))
+        obj,info=import_instance(args.path,args.name,args.move)
+        print(f'Imported as {obj["name"]}: {obj["version"]}')
+        print(obj["path"])
     elif args.instance_action == "launch":
         obj=get(args.name)
         v, errors=resolve(obj["version"],obj["source"])
@@ -378,6 +388,14 @@ def build_parser():
     ii = ins.add_parser("info")
     ii.add_argument("name")
     ii.set_defaults(func=cmd_instance)
+
+    iim = ins.add_parser("import")
+    iim.add_argument("path")
+    iim.add_argument("--name")
+    mode=iim.add_mutually_exclusive_group()
+    mode.add_argument("--copy",action="store_true",help="Copy the source instance (default)")
+    mode.add_argument("--move",action="store_true",help="Move the source game directory into javli")
+    iim.set_defaults(func=cmd_instance)
 
     ila = ins.add_parser("launch")
     ila.add_argument("name")
