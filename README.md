@@ -2,7 +2,7 @@
 # ALERT javli HAS ONLY BEEN  TESTED ON WINDOWS 64 IT MAY NOT WORK AS EXPECTED PLEASE REPORT IISSUES
 **The Minecraft Command-Line Launcher**
 
-javli brings modern Minecraft, historical builds, Microsoft accounts, Java runtimes, instances, modloaders, mods and servers under one command-line interface.
+javli brings modern Minecraft, historical builds, Microsoft accounts, Java runtimes, instances, modloaders, mods and content under one command-line interface.
 
 ```console
 $ javli release 1.21.1
@@ -112,18 +112,7 @@ javli mods install <project-id-or-slug> --instance survival --provider curseforg
 
 Modrinth remains the default provider when `--provider` is omitted. CurseForge projects that do not expose an API download URL must be downloaded manually from their CurseForge project page.
 
-## Servers
 
-```bash
-javli server create smp 1.21.1
-javli server create paper-smp 1.21.1 --kind paper --memory 4G
-javli server eula smp
-javli server start smp
-javli server status smp
-javli server stop smp
-```
-
-javli does not accept Mojang's EULA automatically.
 
 ## Random Minecraft
 
@@ -163,7 +152,6 @@ javli 1.0 contains the major launcher architecture and feature set, but should s
 - import Prism/MultiMC/existing `.minecraft` instances
 - download progress, retries and resume
 - crash diagnostics and `javli doctor`
-- server console and backups
 
 ## Disclaimer
 
